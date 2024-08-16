@@ -3,6 +3,10 @@ This project demonstrates how to deploy a Reddit clone app on Kubernetes with In
 Below is an overview of the architecture of this Reddit Clone App running on Kubernetes with Ingress.
 ![Architecture Diagram](https://github.com/LondheShubham153/reddit-clone-k8s-ingress/assets/71492927/e1eec5f2-1983-445b-8966-e9acfdea7f8e)
 
+- In `CI Server`(Instance type: t2.micro, for testing on a small scale), the code will be build and an image will be created. The image will be pushed onto the **Docker hub**.
+- In `Deployment Server`(Instance type: t2.xlarge, for testing and production Scale) Kubernetes will be set up to deploy the image on a scale.
+
+
 ## Prerequisites
 Before you begin, you should have the following tools installed on your local machine: 
 
@@ -10,97 +14,212 @@ Before you begin, you should have the following tools installed on your local ma
 - Minikube cluster ( Running )
 - kubectl
 - Git
+- Also create account on Docker hub. To create account. [click here](https://hub.docker.com/)
 
-You can install Prerequisites by doing these steps. [click here & complete all steps one by one]().
+You can install Prerequisites by doing these steps. And these steps are for Ubuntu AMI.
+```bash
+# Steps:-
 
+# For Docker Installation
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo usermod -aG docker $USER && newgrp docker
+
+# For Minikube & Kubectl
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube 
+
+sudo snap install kubectl --classic
+minikube start --driver=docker
+```
 
 ## Installation
 Follow these steps to install and run the Reddit clone app on your local machine:
 
-1) Clone this repository to your local machine: `git clone https://github.com/LondheShubham153/reddit-clone-k8s-ingress.git`
-2) Navigate to the project directory: `cd reddit-clone-k8s-ingress`
-3) Build the Docker image for the Reddit clone app: `docker build -t reddit-clone-app .`
-4) Deploy the app to Kubernetes: `kubectl apply -f deployment.yaml`
-1) Deploy the Service for deployment to Kubernetes: `kubectl apply -f service.yaml`
-5) Enable Ingress by using Command: `minikube addons enable ingress`
-6) Expose the app as a Kubernetes service: `kubectl expose deployment reddit-deployment --type=NodePort --port=5000`
-7) Create an Ingress resource: `kubectl apply -f ingress.yaml`
+### In CI Server:
 
+1) First, Install Docker in the CI server.
+```bash
+# For Docker Installation
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo usermod -aG docker $USER && newgrp docker
+```
+2) Clone this repository to your local machine(AWS):
+```bash
+git clone https://github.com/AsifAnsari360/reddit-clone-k8s-proj.git
+```
+3) Navigate to the project directory:
+```bash
+cd reddit-clone-k8s-proj
+```
+4) Build the Docker image for the Reddit clone app:
+```bash
+docker build . -t asifansarihot896000/reddit-clone    #To build Image
+```
+5) Login into docker hub account:
+```bash
+docker login
+```
+Add credentials and press Enter.
 
-## Test Ingress DNS for the app:
-- Test Ingress by typing this command: `curl http://domain.com/test`
-
-## Cluster Monitoring using Prometheus & Grafana
-
-Key Components :
-
-- Prometheus server - Processes and stores metrics data
-- Alert Manager - Sends alerts to any systems/channels
-- Grafana - Visualize scraped data in UI
-
-Pre Requisites :
-- EKS Cluster is setup already
-- Install Helm
-- EC2 instance to access EKS cluster
-
-Installation Steps 
-```sh
-helm repo add stable https://charts.helm.sh/stable
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm search repo prometheus-community
-kubectl create namespace prometheus
-helm install stable prometheus-community/kube-prometheus-stack -n prometheus
-kubectl get pods -n prometheus
-kubectl get svc -n prometheus
+6) To push the Image to docker hub:
+```bash
+docker push asifansarihot896000/reddit-clone:latest
 ```
 
-Edit Prometheus Service (Edit type : LoadBalancer)
-```sh
-kubectl edit svc stable-kube-prometheus-sta-prometheus -n prometheus
+**Here the First half of project is completed**
+
+### In Deployment Server:
+
+1) Install all the Prerequisites that is mentioned below:
+```bash
+# For Docker Installation
+sudo apt-get update
+sudo apt-get install docker.io -y
+sudo usermod -aG docker $USER && newgrp docker
+
+# For Minikube & Kubectl
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube 
+
+sudo snap install kubectl --classic
+minikube start --driver=docker
 ```
-
-Edit Grafana Service (Edit type : LoadBalancer) 
-```sh
-kubectl edit svc stable-grafana -n prometheus
+2) Create New directory and change the directory:
+```bash
+mkdir k8s
+cd k8s
 ```
-
-Verify if service is changed to LoadBalancer and also to get the Load Balancer URL.
-```sh
-kubectl get svc -n prometheus
+3) Create **Deployment.yml** file and add following code:
+```bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reddit-clone-deployment
+  labels:
+    app: reddit-clone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reddit-clone
+  template:
+    metadata:
+      labels:
+        app: reddit-clone
+    spec:
+      containers:
+      - name: reddit-clone
+        image: asifansarihot896000/reddit-clone    #You can also add your docker hub image
+        ports:
+        - containerPort: 3000
 ```
-
-Access Grafana Dashboard
-```sh
-UserName: admin 
-Password: prom-operator
+- Now RUN following command to deploy:
+```bash
+kubectl apply -f Deployment.yml
 ```
-
-
-For creating a dashboard to monitor the cluster:
-
-```sh
-Click '+' button on left panel and select ‘Import’.
-Enter 12740 dashboard id under Grafana.com Dashboard.
-Click ‘Load’.
-Select ‘Prometheus’ as the endpoint under prometheus data sources drop down.
-Click ‘Import’.
+4)  Create **Service.yml** file and add following code:
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+  name: reddit-clone-service
+  labels:
+    app: reddit-clone
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 31000
+  selector:
+    app: reddit-clone
 ```
+- Now RUN following command to create service:
+```bash
+kubectl apply -f Service.yml
+```
+5) To Access application RUN following command:
+```bash
+minikube service reddit-clone-service --url
+```
+- Copy the URL provided and RUN it using the command:
+```bash
+curl -L <YOUR_URL>
+```
+The application will RUN in the terminal.
+6) To Expose the application (To RUN it globally):
+```bash
+kubectl expose deployment reddit-clone-deployment --type=NodePort
+```
+- After running this command, add 3000 port in your instance inbound rules.
+7) To Expose the service:
+```bash
+kubectl port-forward svc/reddit-clone-service 3000:3000 --address 0.0.0.0 &
+```
+- **&** at the end of the command is used to run the application in the background and you can continue working in your terminal. 
+- After running the command, copy your instance public IP address and paste it into any web browser.
+```bash
+http://<Public IP>:3000/
+```
+The reddit-clone Web page will be visible.
+
+## Ingress
+
+- In ingress, all the pods running are clustered in one service and we get a new cluster IP.
+The IP comes with a particular domain name. Rules are created in ingress like for the frontend and backend with different domain name.
+
+1) To enable Ingress controller:
+```bash
+minikube addons enable ingress
+```
+2) Create **ingress.yml** file and add following code:
+```bash
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-reddit-app
+spec:
+  rules:
+  - host: "domain.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/test"
+        backend:
+          service:
+            name: reddit-clone-service
+            port:
+              number: 3000
+  - host: "*.domain.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/test"
+        backend:
+          service:
+            name: reddit-clone-service
+            port:
+              number: 3000
+``` 
+
+3) To apply ingress settings RUN the following command:
+```bash
+kubectl apply -f ingress.yml
+```
+4) Verify that the ingress resource is running correctly by using:
+```bash
+kubectl get ingress ingress-reddit-app
+```
+5) Now It's time to test your ingress so use the command in the terminal:
+```bash
+curl -L domain.com/test
+```
+- The Application will RUN, You can also see the deployed application on `Ec2_ip:3000`.
 
 
-### Images For reference
 
 
-
-<img width="1396" alt="image" src="https://user-images.githubusercontent.com/110477025/227587553-7163c709-85cf-4e23-a00b-823b08758859.png">
-
-
-
-<img width="1400" alt="image" src="https://user-images.githubusercontent.com/110477025/227587788-06ce33dd-3a09-4f36-9bbd-aff0925615ed.png">
-
-
-
-
-## Contributing
-If you'd like to contribute to this project, please open an issue or submit a pull request.
 
 
