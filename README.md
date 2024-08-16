@@ -68,6 +68,8 @@ Add credentials and press Enter.
 docker push asifansarihot896000/reddit-clone:latest
 ```
 
+![dockerhub](https://github.com/user-attachments/assets/650fc54b-06c6-487c-949e-5c99eef17476)
+
 **Here the First half of project is completed**
 
 ### In Deployment Server:
@@ -165,6 +167,8 @@ http://<Public IP>:3000/
 ```
 The reddit-clone Web page will be visible.
 
+![reddit clone](https://github.com/user-attachments/assets/34ab122b-99f7-4041-b1ba-1e6feca2aa83)
+
 ## Ingress
 
 - In ingress, all the pods running are clustered in one service and we get a new cluster IP.
@@ -216,7 +220,11 @@ kubectl get ingress ingress-reddit-app
 ```bash
 curl -L domain.com/test
 ```
+
+![ingress](https://github.com/user-attachments/assets/5337ea14-e37c-4dea-a914-e729409e6a56)
+
 - The Application will RUN, You can also see the deployed application on `Ec2_ip:3000`.
+
 
 **Note:-** Make sure you open the 3000 port in a security group of your Ec2 Instance.
 
