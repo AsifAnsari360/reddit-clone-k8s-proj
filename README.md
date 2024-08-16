@@ -157,6 +157,9 @@ The application will RUN in the terminal.
 kubectl expose deployment reddit-clone-deployment --type=NodePort
 ```
 - After running this command, add 3000 port in your instance inbound rules.
+
+![inbound](https://github.com/user-attachments/assets/4c408434-bc1c-4692-a7a9-44d84bef93b8)
+
 7) To Expose the service:
 ```bash
 kubectl port-forward svc/reddit-clone-service 3000:3000 --address 0.0.0.0 &
