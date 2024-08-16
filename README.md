@@ -218,7 +218,7 @@ curl -L domain.com/test
 ```
 - The Application will RUN, You can also see the deployed application on `Ec2_ip:3000`.
 
-
+**Note:-** Make sure you open the 3000 port in a security group of your Ec2 Instance.
 
 
 
