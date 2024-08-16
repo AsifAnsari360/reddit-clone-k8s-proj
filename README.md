@@ -151,6 +151,7 @@ minikube service reddit-clone-service --url
 curl -L <YOUR_URL>
 ```
 The application will RUN in the terminal.
+
 6) To Expose the application (To RUN it globally):
 ```bash
 kubectl expose deployment reddit-clone-deployment --type=NodePort
